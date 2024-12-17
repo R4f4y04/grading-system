@@ -30,7 +30,7 @@ class HomePage extends StatelessWidget {
 
               // Title
               Text(
-                "Relative Grading System",
+                "HEC Regulated Grading System",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -65,6 +65,40 @@ class HomePage extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Selected file: ${file.name}")),
                     );
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Select Grading Type"),
+                          content: Text(
+                              "Choose the grading method you want to apply."),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text("Relative grading selected")),
+                                );
+                              },
+                              child: Text("Relative Grading"),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text("Absolute grading selected")),
+                                );
+                              },
+                              child: Text("Absolute Grading"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   } else {
                     // User canceled the picker
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -73,7 +107,7 @@ class HomePage extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  surfaceTintColor: Colors.blueAccent,
+                  surfaceTintColor: Colors.indigo[800],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
