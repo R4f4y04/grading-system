@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dialogs.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String? selectedFile;
+  Map<String, dynamic> gradingConfig = {};
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,45 +68,17 @@ class HomePage extends StatelessWidget {
                   );
 
                   if (result != null) {
-                    final file = result.files.single;
-                    // Process the selected file
+                    setState(() {
+                      selectedFile = result.files.single.name;
+                    });
+
+                    // Show selected file name
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Selected file: ${file.name}")),
+                      SnackBar(content: Text("Selected file: $selectedFile")),
                     );
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text("Select Grading Type"),
-                          content: Text(
-                              "Choose the grading method you want to apply."),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text("Relative grading selected")),
-                                );
-                              },
-                              child: Text("Relative Grading"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text("Absolute grading selected")),
-                                );
-                              },
-                              child: Text("Absolute Grading"),
-                            ),
-                          ],
-                        );
-                      },
-                    );
+
+                    // Show grading options dialog
+                    showGradingOptionsDialog(context, gradingConfig, setState);
                   } else {
                     // User canceled the picker
                     ScaffoldMessenger.of(context).showSnackBar(
