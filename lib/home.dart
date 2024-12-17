@@ -20,11 +20,9 @@ class HomePage extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: Colors.grey[200],
                 ),
-                child: Center(
+                child: CircleAvatar(
                   child: Image(
                     image: AssetImage("assets/giki-logo.png"),
-                    height: 80,
-                    width: 80,
                   ),
                 ),
               ),
