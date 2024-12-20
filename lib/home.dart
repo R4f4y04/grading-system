@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:grading_system/filepreview.dart';
 import 'dialogs.dart';
 
 class HomePage extends StatefulWidget {
@@ -76,6 +77,20 @@ class _HomePageState extends State<HomePage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Selected file: $selectedFile")),
                     );
+
+                    // Preview file content
+                    if (result.files.single.bytes != null) {
+                      // Web Compatibility: Use in-memory bytes for preview
+                      previewFileFromBytes(
+                          result.files.single.bytes!, selectedFile!, context);
+                    } else if (result.files.single.path != null) {
+                      // Mobile/Desktop Compatibility: Use file path for preview
+                      previewFile(result.files.single.path!, context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Unable to read the file")),
+                      );
+                    }
 
                     // Show grading options dialog
                     showGradingOptionsDialog(context, gradingConfig, setState);
