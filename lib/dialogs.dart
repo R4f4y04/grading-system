@@ -1,6 +1,27 @@
-// dialogs.dart
 import 'package:flutter/material.dart';
+import 'loading_screen.dart';
+import 'ResultPage.dart'; // Replace with the actual file for the next page
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+/// Function to send grading configuration to the backend
+Future<void> sendGradingConfig(Map<String, dynamic> gradingConfig) async {
+  const url =
+      'http://127.0.0.1:8000/process-grading/'; // Replace with your backend URL
+  await Future.delayed(
+      Duration(seconds: 2)); // Simulate network delay for testing
+  final response = await http.post(
+    Uri.parse(url),
+    headers: {"Content-Type": "application/json"},
+    body: json.encode(gradingConfig),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to send grading config");
+  }
+}
+
+/// Dialog for selecting grading options
 void showGradingOptionsDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   showDialog(
@@ -30,6 +51,7 @@ void showGradingOptionsDialog(BuildContext context,
   );
 }
 
+/// Dialog for configuring relative grading
 void showRelativeGradingDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   Map<String, double> gradeDistribution = {
@@ -74,6 +96,17 @@ void showRelativeGradingDialog(BuildContext context,
                 gradingConfig["distribution"] = gradeDistribution;
               });
               Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LoadingScreen(
+                    loadingTask: () async {
+                      await sendGradingConfig(gradingConfig);
+                    },
+                    nextPage:
+                        ResultPage(), // Replace with your actual next page
+                  ),
+                ),
+              );
             },
             child: Text("Confirm"),
           ),
@@ -83,6 +116,7 @@ void showRelativeGradingDialog(BuildContext context,
   );
 }
 
+/// Dialog for configuring absolute grading
 void showAbsoluteGradingDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   Map<String, double> gradeThresholds = {
@@ -128,6 +162,17 @@ void showAbsoluteGradingDialog(BuildContext context,
                 gradingConfig["thresholds"] = gradeThresholds;
               });
               Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LoadingScreen(
+                    loadingTask: () async {
+                      await sendGradingConfig(gradingConfig);
+                    },
+                    nextPage:
+                        ResultPage(), // Replace with your actual next page
+                  ),
+                ),
+              );
             },
             child: Text("Confirm"),
           ),
