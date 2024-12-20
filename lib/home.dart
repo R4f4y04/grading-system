@@ -82,10 +82,18 @@ class _HomePageState extends State<HomePage> {
                     if (result.files.single.bytes != null) {
                       // Web Compatibility: Use in-memory bytes for preview
                       previewFileFromBytes(
-                          result.files.single.bytes!, selectedFile!, context);
+                          result.files.single.bytes!,
+                          selectedFile!,
+                          context,
+                          showGradingOptionsDialog(
+                              context, gradingConfig, setState));
                     } else if (result.files.single.path != null) {
                       // Mobile/Desktop Compatibility: Use file path for preview
-                      previewFile(result.files.single.path!, context);
+                      previewFile(
+                          result.files.single.path!,
+                          context,
+                          showGradingOptionsDialog(
+                              context, gradingConfig, setState));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Unable to read the file")),
@@ -93,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                     }
 
                     // Show grading options dialog
-                    showGradingOptionsDialog(context, gradingConfig, setState);
+                    // showGradingOptionsDialog(context, gradingConfig, setState);
                   } else {
                     // User canceled the picker
                     ScaffoldMessenger.of(context).showSnackBar(

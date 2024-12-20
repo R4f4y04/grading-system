@@ -4,8 +4,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
+import 'package:grading_system/dialogs.dart';
 
-void previewFile(String filePath, BuildContext context) async {
+void previewFile(
+    String filePath, BuildContext context, gradingOptionsDialog) async {
   String fileExtension = filePath.split('.').last;
   List<List<dynamic>> previewData = [];
 
@@ -32,43 +34,11 @@ void previewFile(String filePath, BuildContext context) async {
   }
 
   // Show the preview
-  showPreviewDialog(context, previewData);
+  showPreviewDialog(context, previewData, gradingOptionsDialog);
 }
 
-void showPreviewDialog(BuildContext context, List<List<dynamic>> previewData) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("File Preview"),
-        content: SingleChildScrollView(
-          child: Table(
-            border: TableBorder.all(),
-            children: previewData.map((row) {
-              return TableRow(
-                children: row.map((cell) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(cell.toString()),
-                  );
-                }).toList(),
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Close"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-void previewFileFromBytes(
-    Uint8List bytes, String fileName, BuildContext context) async {
+void previewFileFromBytes(Uint8List bytes, String fileName,
+    BuildContext context, gradingOptionsDialog) async {
   String fileExtension = fileName.split('.').last;
   List<List<dynamic>> previewData = [];
 
@@ -91,5 +61,60 @@ void previewFileFromBytes(
   }
 
   // Show the preview
-  showPreviewDialog(context, previewData);
+  showPreviewDialog(context, previewData, gradingOptionsDialog);
+}
+
+void showPreviewDialog(BuildContext context, List<List<dynamic>> previewData,
+    gradingOptionsDialog) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("File Preview"),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              Table(
+                border: TableBorder.all(),
+                children: previewData.map((row) {
+                  return TableRow(
+                    children: row.map((cell) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(cell.toString()),
+                      );
+                    }).toList(),
+                  );
+                }).toList(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        gradingOptionsDialog();
+                      },
+                      child: Text("Accept File"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text("Reselect File"),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("Close"),
+          ),
+        ],
+      );
+    },
+  );
 }
