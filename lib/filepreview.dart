@@ -4,10 +4,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
-import 'package:grading_system/dialogs.dart';
 
-void previewFile(
-    String filePath, BuildContext context, gradingOptionsDialog) async {
+void previewFile(String filePath, BuildContext context,
+    Function gradingOptionsDialog) async {
   String fileExtension = filePath.split('.').last;
   List<List<dynamic>> previewData = [];
 
@@ -38,7 +37,7 @@ void previewFile(
 }
 
 void previewFileFromBytes(Uint8List bytes, String fileName,
-    BuildContext context, gradingOptionsDialog) async {
+    BuildContext context, Function gradingOptionsDialog) async {
   String fileExtension = fileName.split('.').last;
   List<List<dynamic>> previewData = [];
 
@@ -65,7 +64,7 @@ void previewFileFromBytes(Uint8List bytes, String fileName,
 }
 
 void showPreviewDialog(BuildContext context, List<List<dynamic>> previewData,
-    gradingOptionsDialog) {
+    Function gradingOptionsDialog) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -94,6 +93,7 @@ void showPreviewDialog(BuildContext context, List<List<dynamic>> previewData,
                   children: [
                     ElevatedButton(
                       onPressed: () {
+                        Navigator.of(context).pop();
                         gradingOptionsDialog();
                       },
                       child: Text("Accept File"),

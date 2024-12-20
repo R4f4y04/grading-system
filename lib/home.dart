@@ -85,14 +85,14 @@ class _HomePageState extends State<HomePage> {
                           result.files.single.bytes!,
                           selectedFile!,
                           context,
-                          showGradingOptionsDialog(
+                          () => showGradingOptionsDialog(
                               context, gradingConfig, setState));
                     } else if (result.files.single.path != null) {
                       // Mobile/Desktop Compatibility: Use file path for preview
                       previewFile(
                           result.files.single.path!,
                           context,
-                          showGradingOptionsDialog(
+                          () => showGradingOptionsDialog(
                               context, gradingConfig, setState));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
