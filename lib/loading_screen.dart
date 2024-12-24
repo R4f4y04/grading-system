@@ -1,52 +1,41 @@
 import 'package:flutter/material.dart';
 
 class LoadingScreen extends StatelessWidget {
-  final Future<void> Function() loadingTask;
-  final Widget nextPage;
+  final Future<Map<String, dynamic>> Function() loadingTask;
+  final Widget Function(Map<String, dynamic>) nextPage;
 
   const LoadingScreen({
     required this.loadingTask,
     required this.nextPage,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
+    return FutureBuilder<Map<String, dynamic>>(
       future: loadingTask(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "Processing...",
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
+              child: CircularProgressIndicator(),
             ),
           );
         } else if (snapshot.hasError) {
           return Scaffold(
             body: Center(
-              child: Text(
-                "An error occurred: ${snapshot.error}",
-                style: TextStyle(fontSize: 16, color: Colors.red),
-              ),
+              child: Text('Error: ${snapshot.error}'),
             ),
           );
         } else {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => nextPage),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => nextPage(snapshot.data!),
+              ),
             );
           });
-          return Scaffold(body: SizedBox.shrink()); // Placeholder
+          return Container();
         }
       },
     );

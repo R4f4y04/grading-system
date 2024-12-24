@@ -10,7 +10,6 @@ import os
 
 app = FastAPI()
 
-# Enable CORS for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +18,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def validate_dataframe(df):
+    required_columns = ['RegNo', 'Marks']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+
 def calculate_relative_grades(df, distribution):
+    validate_dataframe(df)
     df['z_score'] = (df['Marks'] - df['Marks'].mean()) / df['Marks'].std()
     grades = []
     for z in df['z_score']:
@@ -37,6 +43,7 @@ def calculate_relative_grades(df, distribution):
     return df
 
 def calculate_absolute_grades(df, thresholds):
+    validate_dataframe(df)
     grades = []
     for mark in df['Marks']:
         if mark >= thresholds["A"]:
@@ -81,48 +88,41 @@ async def process_grading(
     thresholds: Optional[str] = Form(None)
 ):
     try:
-        # Read file content
         file_content = await file.read()
         df = pd.read_csv(BytesIO(file_content)) if file.filename.endswith('.csv') \
             else pd.read_excel(BytesIO(file_content))
         
-        # Process grades
+        validate_dataframe(df)
+        
         if type == "relative":
             df = calculate_relative_grades(df, json.loads(distribution) if distribution else None)
         else:
             df = calculate_absolute_grades(df, json.loads(thresholds) if thresholds else None)
         
-        # Calculate statistics
         stats = compute_statistics(df)
-        
-        # Create visualization
         create_histogram(df)
         histogram_base64 = encode_image_to_base64('histogram.png')
         
-        # Clean up
         if os.path.exists('histogram.png'):
             os.remove('histogram.png')
         
-        # Debug prints for successful processing
-        print("\n=== Processing Successful ===")
-        print(f"Processed file: {file.filename}")
-        print(f"Grading type: {type}")
-        print(f"Number of records: {len(df)}")
-        print(f"Statistics: Mean={stats['mean']:.2f}, Median={stats['median']:.2f}")
-        print("===========================\n")
-
         return {
-            "status": "success",
-            "filename": file.filename,
-            "grading_type": type,
-            "statistics": stats,
-            "grades": df.to_dict(),
-            "visualizations": {
-                "histogram": histogram_base64
-            }
+        "status": "success",
+        "filename": file.filename,
+        "grading_type": type,
+        "statistics": stats,
+        "grades": {
+            "RegNo": df['RegNo'].astype(str).to_dict(),  # Convert RegNo to string
+            "Marks": df['Marks'].to_dict(),
+            "Grade": df['Grade'].to_dict()
+        },
+        "visualizations": {
+            "histogram": histogram_base64
         }
+    }
     
     except Exception as e:
+        print(f"\nError occurred: {str(e)}\n")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":

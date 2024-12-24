@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
 import 'loading_screen.dart';
-import 'ResultPage.dart'; // Replace with the actual file for the next page
+import 'ResultPage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-/// Function to send grading configuration to the backend
-Future<void> sendGradingConfig(Map<String, dynamic> gradingConfig) async {
-  const url = 'http://127.0.0.1:8000/process-grading/';
+const url = 'http://127.0.0.1:8000/process-grading/';
 
-  // Debug print to check file data
-  print('File Name: ${gradingConfig["fileName"]}');
-  print('File Bytes Length: ${gradingConfig["fileBytes"]?.length}');
-  print('Grade Config: $gradingConfig');
-
-  // Create multipart request
+Future<Map<String, dynamic>> sendGradingConfig(
+    Map<String, dynamic> gradingConfig) async {
   var request = http.MultipartRequest('POST', Uri.parse(url));
 
-  // Add file if present
   if (gradingConfig["fileBytes"] != null) {
-    request.files.add(http.MultipartFile.fromBytes(
-        'file', gradingConfig["fileBytes"],
-        filename: gradingConfig["fileName"] ?? 'file.csv'));
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        gradingConfig["fileBytes"],
+        filename: gradingConfig["fileName"] ?? 'file.csv',
+      ),
+    );
   }
 
-  // Add other grading parameters
   request.fields['type'] = gradingConfig["type"] ?? '';
   if (gradingConfig["distribution"] != null) {
     request.fields['distribution'] = json.encode(gradingConfig["distribution"]);
@@ -34,7 +30,10 @@ Future<void> sendGradingConfig(Map<String, dynamic> gradingConfig) async {
 
   try {
     final response = await request.send();
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      return json.decode(responseBody);
+    } else {
       throw Exception("Failed to send grading config: ${response.statusCode}");
     }
   } catch (e) {
@@ -43,7 +42,6 @@ Future<void> sendGradingConfig(Map<String, dynamic> gradingConfig) async {
   }
 }
 
-/// Dialog for selecting grading options
 void showGradingOptionsDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   showDialog(
@@ -73,7 +71,6 @@ void showGradingOptionsDialog(BuildContext context,
   );
 }
 
-/// Dialog for configuring relative grading
 void showRelativeGradingDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   Map<String, double> gradeDistribution = {
@@ -83,11 +80,6 @@ void showRelativeGradingDialog(BuildContext context,
     "D": 25.0,
     "F": 10.0,
   };
-
-  // Debug print to verify incoming data
-  print('Incoming file data:');
-  print('File name: ${gradingConfig["fileName"]}');
-  print('File bytes length: ${gradingConfig["fileBytes"]?.length}');
 
   showDialog(
     context: context,
@@ -117,33 +109,19 @@ void showRelativeGradingDialog(BuildContext context,
         ),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               setState(() {
-                // Preserve file data while updating grading config
-                final fileBytes = gradingConfig["fileBytes"];
-                final fileName = gradingConfig["fileName"];
-
                 gradingConfig["type"] = "relative";
                 gradingConfig["distribution"] = gradeDistribution;
-
-                // Restore file data
-                gradingConfig["fileBytes"] = fileBytes;
-                gradingConfig["fileName"] = fileName;
               });
-
-              // Debug print after update
-              print('Updated config:');
-              print('File name: ${gradingConfig["fileName"]}');
-              print('File bytes length: ${gradingConfig["fileBytes"]?.length}');
-
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => LoadingScreen(
                     loadingTask: () async {
-                      await sendGradingConfig(gradingConfig);
+                      return await sendGradingConfig(gradingConfig);
                     },
-                    nextPage: ResultPage(),
+                    nextPage: (data) => ResultPage(data: data),
                   ),
                 ),
               );
@@ -156,7 +134,6 @@ void showRelativeGradingDialog(BuildContext context,
   );
 }
 
-/// Dialog for configuring absolute grading
 void showAbsoluteGradingDialog(BuildContext context,
     Map<String, dynamic> gradingConfig, Function setState) {
   Map<String, double> gradeThresholds = {
@@ -166,11 +143,6 @@ void showAbsoluteGradingDialog(BuildContext context,
     "D": 60.0,
     "F": 0.0,
   };
-
-  // Debug print to verify incoming data
-  print('Incoming file data:');
-  print('File name: ${gradingConfig["fileName"]}');
-  print('File bytes length: ${gradingConfig["fileBytes"]?.length}');
 
   showDialog(
     context: context,
@@ -200,33 +172,19 @@ void showAbsoluteGradingDialog(BuildContext context,
         ),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               setState(() {
-                // Preserve file data while updating grading config
-                final fileBytes = gradingConfig["fileBytes"];
-                final fileName = gradingConfig["fileName"];
-
                 gradingConfig["type"] = "absolute";
                 gradingConfig["thresholds"] = gradeThresholds;
-
-                // Restore file data
-                gradingConfig["fileBytes"] = fileBytes;
-                gradingConfig["fileName"] = fileName;
               });
-
-              // Debug print after update
-              print('Updated config:');
-              print('File name: ${gradingConfig["fileName"]}');
-              print('File bytes length: ${gradingConfig["fileBytes"]?.length}');
-
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => LoadingScreen(
                     loadingTask: () async {
-                      await sendGradingConfig(gradingConfig);
+                      return await sendGradingConfig(gradingConfig);
                     },
-                    nextPage: ResultPage(),
+                    nextPage: (data) => ResultPage(data: data),
                   ),
                 ),
               );
