@@ -1,6 +1,7 @@
+//home.dart
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:grading_system/filepreview.dart';
+import 'dart:typed_data'; // Added for web file operations
 import 'dialogs.dart';
 
 class HomePage extends StatefulWidget {
@@ -9,8 +10,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String? selectedFile;
+  String? selectedFileName;
+  Uint8List? selectedFileBytes;
   Map<String, dynamic> gradingConfig = {};
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,38 +73,20 @@ class _HomePageState extends State<HomePage> {
 
                   if (result != null) {
                     setState(() {
-                      selectedFile = result.files.single.name;
+                      selectedFileName = result.files.single.name;
+                      selectedFileBytes = result.files.single.bytes;
                     });
 
-                    // Show selected file name
+                    // Show success message
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Selected file: $selectedFile")),
+                      SnackBar(
+                          content: Text("File selected: $selectedFileName")),
                     );
 
-                    // Preview file content
-                    if (result.files.single.bytes != null) {
-                      // Web Compatibility: Use in-memory bytes for preview
-                      previewFileFromBytes(
-                          result.files.single.bytes!,
-                          selectedFile!,
-                          context,
-                          () => showGradingOptionsDialog(
-                              context, gradingConfig, setState));
-                    } else if (result.files.single.path != null) {
-                      // Mobile/Desktop Compatibility: Use file path for preview
-                      previewFile(
-                          result.files.single.path!,
-                          context,
-                          () => showGradingOptionsDialog(
-                              context, gradingConfig, setState));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Unable to read the file")),
-                      );
-                    }
-
-                    // Show grading options dialog
-                    // showGradingOptionsDialog(context, gradingConfig, setState);
+                    // Send file bytes and grading config to backend
+                    gradingConfig["fileName"] = selectedFileName;
+                    gradingConfig["fileBytes"] = selectedFileBytes;
+                    showGradingOptionsDialog(context, gradingConfig, setState);
                   } else {
                     // User canceled the picker
                     ScaffoldMessenger.of(context).showSnackBar(
