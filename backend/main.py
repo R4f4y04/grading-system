@@ -99,6 +99,12 @@ async def process_grading(
         else:
             df = calculate_absolute_grades(df, json.loads(thresholds) if thresholds else None)
         
+        #method to save new file
+        filename_without_ext = os.path.splitext(file.filename)[0]
+        output_filename = f"{filename_without_ext}_graded.csv"
+        df.to_csv(output_filename, index=False)
+
+
         stats = compute_statistics(df)
         create_histogram(df)
         histogram_base64 = encode_image_to_base64('histogram.png')
