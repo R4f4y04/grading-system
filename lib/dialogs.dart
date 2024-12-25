@@ -81,54 +81,83 @@ void showRelativeGradingDialog(BuildContext context,
     "F": 10.0,
   };
 
+  bool isValidDistribution() {
+    double total =
+        gradeDistribution.values.fold(0, (sum, value) => sum + value);
+    return total == 100.0;
+  }
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Relative Grading"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: gradeDistribution.keys.map((key) {
-            return Row(
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text("Relative Grading"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text("$key:"),
-                SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(hintText: "%"),
-                    onChanged: (value) {
-                      gradeDistribution[key] =
-                          double.tryParse(value) ?? gradeDistribution[key]!;
-                    },
+                ...gradeDistribution.keys.map((key) {
+                  return Row(
+                    children: [
+                      Text("$key:"),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: "%",
+                            errorText: gradeDistribution[key]! < 0
+                                ? "Cannot be negative"
+                                : null,
+                          ),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              gradeDistribution[key] =
+                                  double.tryParse(value)?.abs() ??
+                                      gradeDistribution[key]!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+                SizedBox(height: 16),
+                Text(
+                  "Total: ${gradeDistribution.values.fold(0.0, (sum, value) => sum + value)}%",
+                  style: TextStyle(
+                    color: isValidDistribution() ? Colors.green : Colors.red,
                   ),
                 ),
               ],
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              setState(() {
-                gradingConfig["type"] = "relative";
-                gradingConfig["distribution"] = gradeDistribution;
-              });
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => LoadingScreen(
-                    loadingTask: () async {
-                      return await sendGradingConfig(gradingConfig);
-                    },
-                    nextPage: (data) => ResultPage(data: data),
-                  ),
-                ),
-              );
-            },
-            child: Text("Confirm"),
-          ),
-        ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isValidDistribution()
+                    ? () {
+                        setState(() {
+                          gradingConfig["type"] = "relative";
+                          gradingConfig["distribution"] = gradeDistribution;
+                        });
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => LoadingScreen(
+                              loadingTask: () async {
+                                return await sendGradingConfig(gradingConfig);
+                              },
+                              nextPage: (data) => ResultPage(data: data),
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: Text("Confirm"),
+              ),
+            ],
+          );
+        },
       );
     },
   );
@@ -144,54 +173,88 @@ void showAbsoluteGradingDialog(BuildContext context,
     "F": 0.0,
   };
 
+  bool isValidThresholds() {
+    var values = gradeThresholds.values.toList();
+    for (int i = 0; i < values.length - 1; i++) {
+      if (values[i] <= values[i + 1]) return false;
+    }
+    return values.every((v) => v >= 0 && v <= 100);
+  }
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Absolute Grading"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: gradeThresholds.keys.map((key) {
-            return Row(
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text("Absolute Grading"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text("$key >="),
-                SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(hintText: "%"),
-                    onChanged: (value) {
-                      gradeThresholds[key] =
-                          double.tryParse(value) ?? gradeThresholds[key]!;
-                    },
+                ...gradeThresholds.keys.map((key) {
+                  return Row(
+                    children: [
+                      Text("$key >="),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: "%",
+                            errorText: gradeThresholds[key]! < 0 ||
+                                    gradeThresholds[key]! > 100
+                                ? "Enter 0-100"
+                                : null,
+                          ),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              gradeThresholds[key] =
+                                  double.tryParse(value)?.abs() ??
+                                      gradeThresholds[key]!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+                SizedBox(height: 16),
+                Text(
+                  isValidThresholds()
+                      ? "Valid thresholds"
+                      : "Thresholds must be in descending order (0-100)",
+                  style: TextStyle(
+                    color: isValidThresholds() ? Colors.green : Colors.red,
                   ),
                 ),
               ],
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              setState(() {
-                gradingConfig["type"] = "absolute";
-                gradingConfig["thresholds"] = gradeThresholds;
-              });
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => LoadingScreen(
-                    loadingTask: () async {
-                      return await sendGradingConfig(gradingConfig);
-                    },
-                    nextPage: (data) => ResultPage(data: data),
-                  ),
-                ),
-              );
-            },
-            child: Text("Confirm"),
-          ),
-        ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isValidThresholds()
+                    ? () {
+                        setState(() {
+                          gradingConfig["type"] = "absolute";
+                          gradingConfig["thresholds"] = gradeThresholds;
+                        });
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => LoadingScreen(
+                              loadingTask: () async {
+                                return await sendGradingConfig(gradingConfig);
+                              },
+                              nextPage: (data) => ResultPage(data: data),
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: Text("Confirm"),
+              ),
+            ],
+          );
+        },
       );
     },
   );
