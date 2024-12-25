@@ -3,12 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 from typing import Optional
 import pandas as pd
+import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 import base64
 import os
 
 app = FastAPI()
+GRADES_DIR = os.path.join(os.path.expanduser("~"), "Documents", "GradingSystem", "Processed")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,6 +20,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def ensure_grades_directory():
+    if not os.path.exists(GRADES_DIR):
+        os.makedirs(GRADES_DIR)
 
 def validate_dataframe(df):
     required_columns = ['RegNo', 'Marks']
@@ -76,6 +83,42 @@ def create_histogram(df):
     plt.savefig('histogram.png')
     plt.close()
 
+def create_bell_curve(df):
+    plt.figure()
+    marks = df['Marks']
+    mean = marks.mean()
+    std = marks.std()
+    x = np.linspace(mean - 4*std, mean + 4*std, 100)
+    y = stats.norm.pdf(x, mean, std)
+    plt.plot(x, y)
+    plt.title('Normal Distribution of Marks')
+    plt.xlabel('Marks')
+    plt.ylabel('Probability Density')
+    plt.grid(True)
+    plt.savefig('bell_curve.png')
+    plt.close()
+
+def create_grade_comparison(df, type, thresholds=None):
+    plt.figure(figsize=(10, 6))
+    relative_grades = calculate_relative_grades(df.copy(), None)['Grade']
+    absolute_grades = calculate_absolute_grades(df.copy(), thresholds or {"A": 90, "B": 80, "C": 70, "D": 60, "F": 0})['Grade']
+    
+    grades = ['A', 'B', 'C', 'D', 'F']
+    relative_counts = [len(relative_grades[relative_grades == grade]) for grade in grades]
+    absolute_counts = [len(absolute_grades[absolute_grades == grade]) for grade in grades]
+    
+    x = np.arange(len(grades))
+    width = 0.35
+    plt.bar(x - width/2, relative_counts, width, label='Relative')
+    plt.bar(x + width/2, absolute_counts, width, label='Absolute')
+    plt.xlabel('Grades')
+    plt.ylabel('Number of Students')
+    plt.title('Grade Distribution Comparison')
+    plt.xticks(x, grades)
+    plt.legend()
+    plt.savefig('grade_comparison.png')
+    plt.close()
+
 def encode_image_to_base64(file_path):
     with open(file_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
@@ -99,33 +142,43 @@ async def process_grading(
         else:
             df = calculate_absolute_grades(df, json.loads(thresholds) if thresholds else None)
         
-        #method to save new file
+        ensure_grades_directory()
         filename_without_ext = os.path.splitext(file.filename)[0]
         output_filename = f"{filename_without_ext}_graded.csv"
-        df.to_csv(output_filename, index=False)
-
-
+        output_path = os.path.join(GRADES_DIR, output_filename)
+        df.to_csv(output_path, index=False)
+        
         stats = compute_statistics(df)
         create_histogram(df)
-        histogram_base64 = encode_image_to_base64('histogram.png')
+        create_bell_curve(df)
+        create_grade_comparison(df, type, json.loads(thresholds) if thresholds else None)
         
-        if os.path.exists('histogram.png'):
-            os.remove('histogram.png')
+        histogram_base64 = encode_image_to_base64('histogram.png')
+        bell_curve_base64 = encode_image_to_base64('bell_curve.png')
+        comparison_base64 = encode_image_to_base64('grade_comparison.png')
+        
+        for temp_file in ['histogram.png', 'bell_curve.png', 'grade_comparison.png']:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+        
+        print(f"\nProcessed file saved to: {output_path}")
         
         return {
-        "status": "success",
-        "filename": file.filename,
-        "grading_type": type,
-        "statistics": stats,
-        "grades": {
-            "RegNo": df['RegNo'].astype(str).to_dict(),  # Convert RegNo to string
-            "Marks": df['Marks'].to_dict(),
-            "Grade": df['Grade'].to_dict()
-        },
-        "visualizations": {
-            "histogram": histogram_base64
+            "status": "success",
+            "filename": file.filename,
+            "grading_type": type,
+            "statistics": stats,
+            "grades": {
+                "RegNo": df['RegNo'].astype(str).to_dict(),
+                "Marks": df['Marks'].to_dict(),
+                "Grade": df['Grade'].to_dict()
+            },
+            "visualizations": {
+                "histogram": histogram_base64,
+                "bell_curve": bell_curve_base64,
+                "grade_comparison": comparison_base64
+            }
         }
-    }
     
     except Exception as e:
         print(f"\nError occurred: {str(e)}\n")

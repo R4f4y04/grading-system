@@ -56,8 +56,11 @@ class ResultPage extends StatelessWidget {
 
                   // Statistics and Histogram
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Grades Table Card - Left side
                       Expanded(
+                        flex: 1,
                         child: Card(
                           elevation: 4,
                           child: Padding(
@@ -66,92 +69,109 @@ class ResultPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Statistics",
+                                  "Student Grades",
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                                 SizedBox(height: 16),
-                                _buildStatisticRow(
-                                    "Mean", data['statistics']['mean']),
-                                _buildStatisticRow(
-                                    "Median", data['statistics']['median']),
-                                _buildStatisticRow(
-                                    "Std Dev", data['statistics']['std_dev']),
-                                _buildStatisticRow(
-                                    "Mode", data['statistics']['mode']),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: [
+                                      DataColumn(
+                                          label: Text('Registration No')),
+                                      DataColumn(label: Text('Marks')),
+                                      DataColumn(label: Text('Grade')),
+                                    ],
+                                    rows: List<DataRow>.generate(
+                                      data['grades']['Marks'].length,
+                                      (index) => DataRow(
+                                        cells: [
+                                          DataCell(Text(data['grades']['RegNo']
+                                              [index.toString()])),
+                                          DataCell(Text(data['grades']['Marks']
+                                                  [index.toString()]
+                                              .toString())),
+                                          DataCell(Text(data['grades']['Grade']
+                                              [index.toString()])),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
                       SizedBox(width: 24),
+                      // Visualizations Card - Right side
                       Expanded(
-                        child: Card(
-                          elevation: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Grade Distribution",
-                                  style: Theme.of(context).textTheme.titleLarge,
+                        flex: 2,
+                        child: Column(
+                          children: [
+                            // Statistics Card
+                            Card(
+                              elevation: 4,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Statistics",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge),
+                                    SizedBox(height: 16),
+                                    _buildStatisticRow(
+                                        "Mean", data['statistics']['mean']),
+                                    _buildStatisticRow(
+                                        "Median", data['statistics']['median']),
+                                    _buildStatisticRow("Std Dev",
+                                        data['statistics']['std_dev']),
+                                    _buildStatisticRow(
+                                        "Mode", data['statistics']['mode']),
+                                  ],
                                 ),
-                                SizedBox(height: 16),
-                                Image.memory(
-                                  base64Decode(
-                                      data['visualizations']['histogram']),
-                                  fit: BoxFit.contain,
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
+                            SizedBox(height: 24),
+                            // Visualizations Card
+                            Card(
+                              elevation: 4,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Visualizations",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge),
+                                    SizedBox(height: 16),
+                                    Image.memory(base64Decode(
+                                        data['visualizations']['histogram'])),
+                                    SizedBox(height: 16),
+                                    if (data['grading_type'] == 'relative' &&
+                                        data['visualizations']['bell_curve'] !=
+                                            null) ...[
+                                      Image.memory(base64Decode(
+                                          data['visualizations']
+                                              ['bell_curve'])),
+                                      SizedBox(height: 16),
+                                    ],
+                                    Image.memory(base64Decode(
+                                        data['visualizations']
+                                            ['grade_comparison'])),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 24),
-
-                  // Grades Table
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Student Grades",
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          SizedBox(height: 16),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: [
-                                DataColumn(label: Text('Registration No')),
-                                DataColumn(label: Text('Marks')),
-                                DataColumn(label: Text('Grade')),
-                              ],
-                              rows: List<DataRow>.generate(
-                                data['grades']['Marks'].length,
-                                (index) => DataRow(
-                                  cells: [
-                                    DataCell(Text(data['grades']['RegNo']
-                                        [index.toString()])),
-                                    DataCell(Text(data['grades']['Marks']
-                                            [index.toString()]
-                                        .toString())),
-                                    DataCell(Text(data['grades']['Grade']
-                                        [index.toString()])),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
