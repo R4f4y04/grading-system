@@ -20,7 +20,7 @@ class ResultPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Grading Results"),
-        backgroundColor: Colors.indigo[800],
+        backgroundColor: Colors.grey[350],
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
